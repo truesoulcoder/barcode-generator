@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPC-A Barcode Generator for Dry Cleaning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* UPDATED: More compact flex layout */
+        #barcodeContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px; /* Reduced space between items for cutting */
+            justify-content: flex-start;
+        }
+        
+        /* NEW: Styles for each item (label + barcode) */
+        .barcode-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            page-break-inside: avoid;
+        }
+
+        /* NEW: Style for the hook number label */
+        .hook-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #334155; /* slate-700 */
+            margin-bottom: 2px;
+        }
+        
+        @media print {
+            body {
+                background-color: white !important;
+            }
+            #controls-panel {
+                display: none;
+            }
+            .flex.min-h-screen {
+                display: block;
+                min-height: 0;
+            }
+            .flex-1 {
+                width: 100%;
+                padding: 0;
+                background-color: white !important;
+            }
+            #print-area {
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0.5cm; /* Reduced print margin to fit more */
+            }
+            /* Ensure compact layout is maintained for printing */
+            #barcodeContainer {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+            .barcode-item {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- CONTROLS PANEL -->
+        <div id="controls-panel" class="w-full lg:w-[380px] bg-white p-6 shadow-lg lg:h-screen lg:overflow-y-auto">
+            <div class="space-y-6">
+                <div class="flex items-center space-x-3">
+                     <svg class="w-8 h-8 text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 14.625v4.5c0 .621.504 1.125 1.125 1.125h4.5c.621 0 1.125.504 1.125 1.125v-4.5c0-.621-.504-1.125-1.125-1.125h-4.5a1.125 1.125 0 0 0-1.125 1.125ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+                    </svg>
+                    <h1 class="text-2xl font-bold text-slate-800">Barcode Generator</h1>
+                </div>
+                <!-- Data Input Section -->
+                <div class="border-t pt-6 space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-700">1. Store # and Hook #'s</h2>
+                    <div>
+                        <label for="storeId" class="block text-sm font-medium text-slate-600 mb-1">Store # (1-999)</label>
+                        <input type="text" id="storeId" value="1" inputmode="numeric" pattern="[0-9]*" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1">
+                            <label for="startNumber" class="block text-sm font-medium text-slate-600 mb-1">Start Hook #</label>
+                            <input type="text" id="startNumber" value="1" inputmode="numeric" pattern="[0-9]*" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div class="flex-1">
+                            <label for="endNumber" class="block text-sm font-medium text-slate-600 mb-1">End Hook #</label>
+                            <input type="text" id="endNumber" value="100" inputmode="numeric" pattern="[0-9]*" class="w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout & Sizing Section -->
+                <div class="border-t pt-6 space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-700">2. Barcode Sizing</h2>
+                    <div>
+                        <label for="barcodeWidth" class="block text-sm font-medium text-slate-600 mb-1">Barcode Width: <span id="width-val">0.8</span></label>
+                        <input type="range" id="barcodeWidth" min="0.5" max="2" step="0.1" value="0.8" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                     <div>
+                        <label for="barcodeHeight" class="block text-sm font-medium text-slate-600 mb-1">Barcode Height: <span id="height-val">30</span>px</label>
+                        <input type="range" id="barcodeHeight" min="10" max="70" step="5" value="30" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Actions Section -->
+                <div class="border-t pt-6 space-y-3">
+                    <button id="generateBtn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                        Generate & Preview
+                    </button>
+                    <button id="printBtn" class="w-full bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors duration-200 hidden">
+                        Print Barcodes
+                    </button>
+                </div>
+                 <div id="message-box" class="p-4 mt-4 text-center rounded-md hidden"></div>
+            </div>
+        </div>
+
+        <!-- PREVIEW AREA -->
+        <div class="flex-1 p-6 lg:p-10 bg-slate-200">
+            <div id="print-area" class="bg-white p-6 rounded-lg shadow-inner min-h-full">
+                <div id="barcodeContainer">
+                    <!-- Barcodes will be generated here -->
+                    <div class="flex items-center justify-center h-full text-slate-500">
+                        <p>Configure settings and click "Generate & Preview".</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element References
+        const storeIdInput = document.getElementById('storeId');
+        const startNumberInput = document.getElementById('startNumber');
+        const endNumberInput = document.getElementById('endNumber');
+        const barcodeWidthInput = document.getElementById('barcodeWidth');
+        const barcodeHeightInput = document.getElementById('barcodeHeight');
+        const generateBtn = document.getElementById('generateBtn');
+        const printBtn = document.getElementById('printBtn');
+        const barcodeContainer = document.getElementById('barcodeContainer');
+        const messageBox = document.getElementById('message-box');
+
+        // Value display spans
+        const widthVal = document.getElementById('width-val');
+        const heightVal = document.getElementById('height-val');
+
+        // --- Event Listeners ---
+
+        // Update display values when sliders change
+        barcodeWidthInput.addEventListener('input', (e) => widthVal.textContent = e.target.value);
+        barcodeHeightInput.addEventListener('input', (e) => heightVal.textContent = e.target.value);
+        
+        // Main generator button
+        generateBtn.addEventListener('click', generateBarcodes);
+        
+        // Print button
+        printBtn.addEventListener('click', () => {
+             // Use the browser's print functionality
+             window.print();
+        });
+
+        /**
+         * Displays a message to the user.
+         * @param {string} text - The message to display.
+         * @param {string} type - 'success', 'error', or 'info'.
+         */
+        function showMessage(text, type) {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+            }
+            messageBox.classList.remove('hidden');
+        }
+
+        /**
+         * Main function to generate and display the barcodes in the preview area.
+         */
+        function generateBarcodes() {
+            // 1. Get all input values
+            const storeId = parseInt(storeIdInput.value);
+            const startNum = parseInt(startNumberInput.value);
+            const endNum = parseInt(endNumberInput.value);
+            const barcodeWidth = parseFloat(barcodeWidthInput.value);
+            const barcodeHeight = parseInt(barcodeHeightInput.value);
+
+            // 2. Clear previous results and messages
+            barcodeContainer.innerHTML = '';
+            messageBox.classList.add('hidden');
+
+            // 3. Validate inputs
+            if (isNaN(storeId) || isNaN(startNum) || isNaN(endNum)) {
+                showMessage('Please enter valid numbers for all fields.', 'error');
+                return;
+            }
+            if (startNum > endNum) {
+                showMessage('Start Hook # cannot be greater than End Hook #.', 'error');
+                return;
+            }
+            if (storeId < 1 || storeId > 999) {
+                showMessage('Store ID must be between 1 and 999.', 'error');
+                return;
+            }
+            if (endNum > 99999) {
+                showMessage('The maximum hook number is 99,999.', 'error');
+                return;
+            }
+            const totalBarcodes = endNum - startNum + 1;
+            if (totalBarcodes > 2000) {
+                 showMessage(`Warning: Generating ${totalBarcodes} barcodes may be slow. Max is 2000.`, 'error');
+                 return;
+            }
+
+            // 4. Loop and generate each barcode
+            for (let i = startNum; i <= endNum; i++) {
+                try {
+                    // --- UPC-A Data Encoding Scheme ---
+                    // UPC-A requires 11 data digits + 1 calculated check digit.
+                    // We will structure the 11 digits as follows:
+                    // Digit 1:    '2' (Number System Character for random weight items, good for in-store use)
+                    // Digits 2-4:  Store ID (padded to 3 digits, e.g., 5 -> "005")
+                    // Digits 5-9:  Hook Number (padded to 5 digits, e.g., 123 -> "00123")
+                    // Digits 10-11: '00' (Filler digits to complete the 11-digit requirement)
+                    
+                    const storeIdPadded = String(storeId).padStart(3, '0');
+                    const hookNumPadded = String(i).padStart(5, '0');
+                    const dataString = `2${storeIdPadded}${hookNumPadded}00`;
+
+                    // Create a container for the label and barcode
+                    const itemContainer = document.createElement('div');
+                    itemContainer.className = 'barcode-item';
+
+                    // Create and add the hook number label
+                    const label = document.createElement('div');
+                    label.className = 'hook-label';
+                    label.textContent = `Hook: ${i}`;
+                    itemContainer.appendChild(label);
+
+                    // Create and add the SVG for the barcode
+                    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    itemContainer.appendChild(svg);
+                    
+                    barcodeContainer.appendChild(itemContainer);
+
+                    // Use JsBarcode to generate the barcode in the created SVG element
+                    JsBarcode(svg, dataString, {
+                        format: "UPC",
+                        width: barcodeWidth,
+                        height: barcodeHeight,
+                        displayValue: true, // Show the number below the barcode
+                        textMargin: 2,      // Reduced margin
+                        fontSize: 12,       // Reduced font size
+                        margin: 4           // Reduced margin around the barcode
+                    });
+                } catch (e) {
+                    console.error(`Failed to generate barcode for number ${i}:`, e);
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'text-red-500 text-xs';
+                    errorDiv.textContent = `Error for #${i}`;
+                    barcodeContainer.appendChild(errorDiv);
+                }
+            }
+            
+            showMessage(`Successfully generated ${totalBarcodes} barcodes.`, 'success');
+            printBtn.classList.remove('hidden');
+        }
+    </script>
+
+</body>
+</html>
